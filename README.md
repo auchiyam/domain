@@ -67,7 +67,7 @@ With the use of domains, the duck typing is both relatively more safe and easy t
 # Ruby-like pseudocode
 
 domain Lengthy
-  rule: |x| respond_to?(:length)
+  rule: |x| x.respond_to?(:length)
 end
 
 def lengthy(x: Lengthy)
