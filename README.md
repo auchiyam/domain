@@ -30,7 +30,7 @@ There are various different strengths domain offers over both dynamically typed 
 
 ### 1) Duck Typing
 
-Duck typing is a form of typing that was named from the famous phrase "If it walks like a duck, and quacks like a duck, then it is a duck".  It roughly states that as long as the object behaves a certain way, the program should not care if it actually is the object they are looking for, which is a duck in the quote's case.
+Duck typing is a form of typing that was named from the famous phrase "If it looks like a duck, swims like a duck, and quacks like a duck, then it probably is a duck.".  It roughly states that as long as the object behaves a certain way, the program should not care if it actually is the object they are looking for, which is a duck in the quote's case.
 
 #### Statically typed languages
 
