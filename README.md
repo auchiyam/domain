@@ -57,7 +57,7 @@ puts lengthy([1,2,3,4,5])     # 5
 puts lengthy(Lengthy.new)     # 10
 ```
 
-Despite the fact that x is a String or Array, both would be acceptable as they define their own length method.  Additionally, a brand new class that has the `length` method would also be accepted without any trouble, as dynamically typed languages does not care about the type of the object until the program requires the information.  However, what if someone sent an object that does not respond to the `length` method?  As the program grow, the insecurity of the dynamically typed language will slowly make the debugging of the program harder, as the program will only throw an error at runtime rather than compile time.
+Despite the fact that x is a String or Array, both would be acceptable as they define their own length method.  Additionally, a brand new class that has the `length` method would also be accepted without any trouble, as dynamically typed languages does not care about the type of the object until the program requires the information.  However, what if someone sent an object that does not respond to the `length` method?  As the program grow, the lack of compile time security of the dynamically typed language will slowly make the debugging of the program harder, as the program will only throw an error at runtime rather than compile time.
 
 #### Domain
 
