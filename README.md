@@ -4,7 +4,7 @@
 
 Domain is a form of type created to help make the dynamically typed language more secure, but not as strict as statically typed languages.  Thus domain typing lies somewhere between statically typed languages and dynamically typed languages.
 
-As for this particular code, it is a proof of concept made through heavy usage of Ruby's metaprogramming and its natural to read syntax, so that it is more easy to use, as if they were part of the language all along.  I realize that there are probably better ways to implement the functionalities through low level means such as creating 
+As for this particular code, it is a proof of concept made through heavy usage of Ruby's metaprogramming and its natural to read syntax, so that it is more easy to use, as if they were part of the language all along.  I realize that there are probably better ways to implement the functionalities through low level means such as implementing the functionality directly to the Ruby language, however, because it is merely a proof of concept, I have opted for something easier to implement in.
 
 ## Domain vs Types
 
