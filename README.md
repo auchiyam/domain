@@ -22,7 +22,7 @@ domain Integer
 end
 ```
 
-What this piece of pseudocode states is that an object is an integer if it is either an integer, or if it is a string that can be converted to an integer.  With such rules, it becomes natural to also accept the value `"20"` as an integer.  It is also clearly defined so that a string that is not an integer, or `"20d"` and `"twenty"`, is not accepted as a string, which prevents any possible misinterpretations.  In this particular example, the domain accepted both Integer and String.
+What this piece of pseudocode states is that an object is an integer if it is either an integer (type), or if it is a string that can be converted to an integer.  With such rules, it becomes natural to also accept the value `"20"` as an integer.  It is also clearly defined so that a string that is not an integer, or `"20d"` and `"twenty"`, is not accepted as a string, which prevents any possible misinterpretations.  In this particular example, the domain accepted both Integer and String.
 
 ## Strengths
 
