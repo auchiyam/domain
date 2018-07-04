@@ -90,3 +90,7 @@ The domain goes a step further the dynamically typed language and implement the 
 
 ### 2) Combination of Domains
 ### 3) Clear formalization of rules
+
+## Features
+
+Although this is a proof of concept code for domain functionality, there are some features that are still not available from the concept I have listed, such as checking everything at compile time.  The features implemented will be added to the list as I implement them; however, keep in mind that not all features required for domains are implemented.
