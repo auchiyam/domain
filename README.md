@@ -24,6 +24,65 @@ end
 
 What this piece of pseudocode states is that an object is an integer if it is either an integer (type), or if it is a string that can be converted to an integer.  With such rules, it becomes natural to also accept the value `"20"` as an integer.  It is also clearly defined so that a string that is not an integer, or `"20d"` and `"twenty"`, is not accepted as a string, which prevents any possible misinterpretations.  In this particular example, the domain accepted both Integer and String.
 
+## Features
+
+### 1) Declaration of the domain
+
+#### Theory
+
+Declaration of the domain is straightforward: domain can be declared and defined like any other classes, like so:
+
+```
+# Ruby-like pseudocode
+domain Integer
+  rule(Integer): true
+  rule(String): |x| is_integer(x)
+  rule: |x| (x is Integer) or (x is String)
+end
+```
+
+The `rule` function takes the domain (or class) and the rule it applies to.  The rule should be an anonymous function that, from 1 argument, return a boolean value on whether that value is part of the domain or not.  In this example, Integer would always return true, so any integer values would be accepted.  String, on the other hand, must go through the anonymous function that checks if the String x can be converted to Integer.  Finally, the third rule without any argument indicates that every type must pass this rule.  
+
+#### Implementation
+
+In this code, the domain can be declared as follows:
+
+```
+domain :Integer do
+  rule(Integer)
+  rule(String) { |x| is_integer(x) }
+end
+```
+
+`domain` function accepts a symbol and block, symbol being the name of the domain, preferably in constant format due to limitation in Ruby's metaprogramming.  Within the block, the user must specify some rules for the domain.  `rule` accepts a domain and block to imitate the specification as much as possible.
+
+### 2) Defining the domain and codomain of the function
+
+### 2) Combination of Domains
+
+Because domain is based on the mathematical term, it can also respond well to set operations such as union, intersection, difference, and complement.  This allows domains to create complex rules in an intuitive and easy way.  For example, suppose the program should only accept an integer in string format, perhaps to store it as a user ID or credit card number where it does not make sense to accept any other string, but representing it in integer cause unwanted overflow.  In other languages, this would mean that you must write a lengthy if statements to determine that it is the proper object.  In domain, however, it is possible to do:
+
+```
+# Ruby-like pseudocode
+
+domain Integer
+  rule(Integer): true
+  rule(String): |x| is_integer(x)
+end
+
+UserID = Integer ∩ String
+
+def accept(id: UserID)
+  # code
+end
+```
+
+The UserID is defined as the intersection of integer and string, meaning it must both be a String and Integer.  So if a regular Integer was passed, although it pass the restriction imposed by Integer domain, it does not satisfy the String restriction.
+
+### 3) Implicit translations
+
+### 4) Compile Time Type Checking
+
 ## Strengths
 
 There are various different strengths domain offers over both dynamically typed languages and statically typed languages.  Here are couple of examples:
@@ -88,29 +147,5 @@ puts lengthy(50)                # Error inducing
 
 The domain goes a step further the dynamically typed language and implement the type safety like the statically typed languages.  In an ideal case, the compiler would read the script and realize that Integer:50 does not fall under the Lengthy domain, and thus raise an error warning the programmer of such.
 
-### 2) Combination of Domains
+### 2) Clear formalization of rules
 
-Because domain is based on the mathematical term, it can also respond well to set operations such as union, intersection, difference, and complement.  This allows domains to create complex rules in an intuitive and easy way.  For example, suppose the program should only accept an integer in string format, perhaps to store it as a user ID or credit card number where it does not make sense to accept any other string, but representing it in integer cause unwanted overflow.  In other languages, this would mean that you must write a lengthy if statements to determine that it is the proper object.  In domain, however, it is possible to do:
-
-```
-# Ruby-like pseudocode
-
-domain Integer
-  rule(Integer): true
-  rule(String): |x| is_integer(x)
-end
-
-UserID = Integer ∩ String
-
-def accept(id: UserID)
-  # code
-end
-```
-
-The UserID is defined as the intersection of integer and string, meaning it must both be a String and Integer.  So if a regular Integer was passed, although it pass the restriction imposed by Integer domain, it does not satisfy the String restriction.
-
-### 3) Clear formalization of rules
-
-## Features
-
-Although this is a proof of concept code for domain functionality, there are some features that are still not available from the concept I have listed, such as checking everything at compile time.  The features implemented will be added to the list as I implement them; however, keep in mind that not all features required for domains are implemented.
