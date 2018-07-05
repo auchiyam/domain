@@ -1,14 +1,11 @@
-# domain
+# Domain
 
-## What is domain?
+## What is Domain?
 
-Domain is a form of type created to help make the dynamically typed language more secure, but not as strict as statically typed languages.  Thus domain typing lies somewhere between statically typed languages and dynamically typed languages.
+>In mathematics, and more specifically in naive set theory, the _domain of definition_ (or simply the _domain_) of a function is the set of "input" or argument values for which the function is defined  
+>~*Domain of a function Wikipedia page*
 
-As for this particular code, it is a proof of concept made through heavy usage of Ruby's metaprogramming and its natural to read syntax, so that it is more easy to use, as if they were part of the language all along.  I realize that there are probably better ways to implement the functionalities through low level means such as implementing the functionality directly to the Ruby language, however, because it is merely a proof of concept, I have opted for something easier to implement in.
-
-## Domain vs Types
-
-Domains are set of rules an object must follow in order for the object to be accepted.  Domains are more general form of types, since domains can accept any object as long as they follow the rules, while types must be exact.  A simple example would be the object `"20"`.  In types, `"20"` is strictly string, and nothing more.  However, suppose a domain for integer was defined as follows:
+Domain is a set of rules an object must follow in order for the object to be accepted.  It is inspired by the mathematical concept of domain of a function defined above.  In the programming context, domain acts similarly to a generalized form of types, because it is a form of identifying an object.  A simple example would be the object `"20"`.  In types, `"20"` is strictly string, and nothing more.  However, suppose a domain for integer was defined as follows:
 
 ```
 # Ruby-like pseudocode
@@ -23,6 +20,8 @@ end
 ```
 
 What this piece of pseudocode states is that an object is an integer if it is either an integer (type), or if it is a string that can be converted to an integer.  With such rules, it becomes natural to also accept the value `"20"` as an integer.  It is also clearly defined so that a string that is not an integer, or `"20d"` and `"twenty"`, is not accepted as a string, which prevents any possible misinterpretations.  In this particular example, the domain accepted both Integer and String.
+
+As for this particular repository, it is a proof of concept made through heavy usage of Ruby's metaprogramming and its natural to read syntax, so that it is easier to use, as if they were part of the language all along.
 
 ## Features
 
@@ -41,7 +40,7 @@ domain Integer
 end
 ```
 
-The `rule` function takes the domain (or class) and the rule it applies to.  The rule should be an anonymous function that, from 1 argument, return a boolean value on whether that value is part of the domain or not.  In this example, Integer would always return true, so any integer values would be accepted.  String, on the other hand, must go through the anonymous function that checks if the String x can be converted to Integer.  Finally, the third rule without any argument indicates that every type must pass this rule.  
+The `rule` function takes the domain (or class) and the rule it applies to.  The rule should be an anonymous function that, from 1 argument, return a boolean value on whether that value is part of the domain or not.  In this example, Integer would always return true, so any integer values would be accepted.  String, on the other hand, must go through the anonymous function that checks if the String x can be converted to Integer.  Finally, the third rule without any argument indicates that every type must pass this rule.
 
 #### Implementation
 
@@ -58,7 +57,9 @@ end
 
 ### 2) Defining the domain and codomain of the function
 
-### 2) Combination of Domains
+### 3) Declaration of variables
+
+### 4) Combination of Domains
 
 Because domain is based on the mathematical term, it can also respond well to set operations such as union, intersection, difference, and complement.  This allows domains to create complex rules in an intuitive and easy way.  For example, suppose the program should only accept an integer in string format, perhaps to store it as a user ID or credit card number where it does not make sense to accept any other string, but representing it in integer cause unwanted overflow.  In other languages, this would mean that you must write a lengthy if statements to determine that it is the proper object.  In domain, however, it is possible to do:
 
@@ -79,9 +80,9 @@ end
 
 The UserID is defined as the intersection of integer and string, meaning it must both be a String and Integer.  So if a regular Integer was passed, although it pass the restriction imposed by Integer domain, it does not satisfy the String restriction.
 
-### 3) Implicit translations
+### 5) Implicit translations
 
-### 4) Compile Time Type Checking
+### 6) Compile Time Type Checking
 
 ## Strengths
 
