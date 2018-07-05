@@ -89,6 +89,26 @@ puts lengthy(50)                # Error inducing
 The domain goes a step further the dynamically typed language and implement the type safety like the statically typed languages.  In an ideal case, the compiler would read the script and realize that Integer:50 does not fall under the Lengthy domain, and thus raise an error warning the programmer of such.
 
 ### 2) Combination of Domains
+
+Because domain is based on the mathematical term, it can also respond well to set operations such as union, intersection, difference, and complement.  This allows domains to create complex rules in an intuitive and easy way.  For example, suppose the program should only accept an integer in string format, perhaps to store it as a user ID or credit card number where it does not make sense to accept any other string, but representing it in integer cause unwanted overflow.  In other languages, this would mean that you must write a lengthy if statements to determine that it is the proper object.  In domain, however, it is possible to do:
+
+```
+# Ruby-like pseudocode
+
+domain Integer
+  rule(Integer): true
+  rule(String): |x| is_integer(x)
+end
+
+UserID = Integer ∩ String
+
+def accept(id: UserID)
+  # code
+end
+```
+
+The UserID is defined as the intersection of integer and string, meaning it must both be a String and Integer.  So if a regular Integer was passed, although it pass the restriction imposed by Integer domain, it does not satisfy the String restriction.
+
 ### 3) Clear formalization of rules
 
 ## Features
