@@ -212,7 +212,7 @@ variable `x` with domain IntegerString can respond to both String and Integer's 
 
 There are various limits to the Ruby's implicit conversions that makes some of the implicit conversions impossible.  However, here are several ways this code achieve this functionality:
 
-1)  Ability to specify translation rules in the domain declaration:
+* Ability to specify translation rules in the domain declaration:
 ```
 domain :Integer do
   rule(Integer)
@@ -225,23 +225,23 @@ domain :Integer do
 end
 ```
 
-`translate` method takes domain A and domain B as argument and a block that successfully change the value from A -> B.  The argument also takes the symbol `:default` as an argument, which will be discussed later
+...`translate` method takes domain A and domain B as argument and a block that successfully change the value from A -> B.  The argument also takes the symbol `:default` as an argument, which will be discussed later
 
-`default` method takes a domain as an argument, which creates a "default" value for the object.  This default value is used to find another path that was not directly specified.  For example, suppose that a domain has translation rules for `Integer -> String` and `String -> Float`, and you want to translate Integer -> Float.  Because there are no direct Integer -> Float translation rules, one can set String as default value, which would make the domain also try Integer -> String -> Float translation, which exists.
+...`default` method takes a domain as an argument, which creates a "default" value for the object.  This default value is used to find another path that was not directly specified.  For example, suppose that a domain has translation rules for `Integer -> String` and `String -> Float`, and you want to translate Integer -> Float.  Because there are no direct Integer -> Float translation rules, one can set String as default value, which would make the domain also try Integer -> String -> Float translation, which exists.
 
-Perhaps in the future, there can be an algorithm that can find a path without relying on a default value.
+...Perhaps in the future, there can be an algorithm that can find a path without relying on a default value.
 
-2) Automatically creating implicit conversion methods such as `to_ary` and `to_int` whenever there are rules that translate objects to them.
+* Automatically creating implicit conversion methods such as `to_ary` and `to_int` whenever there are rules that translate objects to them.
 
-The weakness to this approach is that not all classes has a method that are implicitly called, such as float.
+...The weakness to this approach is that not all classes has a method that are implicitly called, such as float.
 
-3) Generating a coerce method whenever mathematical translations are needed, so it can be interpreted properly.
+* Generating a coerce method whenever mathematical translations are needed, so it can be interpreted properly.
 
-This allows variables to be interpreted properly in cases like `x + complex_class`
+...This allows variables to be interpreted properly in cases like `x + complex_class`
 
-4) Running method_missing so that if a method has been called for one of the output translation, the value is translated and then the method is called.
+* Running method_missing so that if a method has been called for one of the output translation, the value is translated and then the method is called.
 
-This allows the object to respond to any method that it can be converted to.
+...This allows the object to respond to any method that it can be converted to.
 
 ### 6) Compile Time Type Checking
 
