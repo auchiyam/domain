@@ -212,7 +212,7 @@ variable `x` with domain IntegerString can respond to both String and Integer's 
 
 There are various limits to the Ruby's implicit conversions that makes some of the implicit conversions impossible.  However, here are several ways this code achieve this functionality:
 
-1.  Ability to specify translation rules in the domain declaration:
+1)  Ability to specify translation rules in the domain declaration:
 ```
 domain :Integer do
   rule(Integer)
@@ -231,11 +231,17 @@ end
 
 Perhaps in the future, there can be an algorithm that can find a path without relying on a default value.
 
-2. Automatically creating implicit conversion methods such as `to_ary` and `to_int` whenever there are rules that translate objects to those implicit conversion.
+2) Automatically creating implicit conversion methods such as `to_ary` and `to_int` whenever there are rules that translate objects to them.
 
-3. Generating a coerce method whenever mathematical translations are needed, so it can be interpreted properly
+The weakness to this approach is that not all classes has a method that are implicitly called, such as float.
 
-4. Running method_missing so that if a method has been called for one of the output translation, the value is translated and then the method is called.
+3) Generating a coerce method whenever mathematical translations are needed, so it can be interpreted properly.
+
+This allows variables to be interpreted properly in cases like `x + complex_class`
+
+4) Running method_missing so that if a method has been called for one of the output translation, the value is translated and then the method is called.
+
+This allows the object to respond to any method that it can be converted to.
 
 ### 6) Compile Time Type Checking
 
