@@ -245,7 +245,7 @@ There are various limits to the Ruby's implicit conversions that makes some of t
 
 ### 6) Compile Time Type Checking
 
-### 7) Equality between two different domains
+Because it should theoretically be possible to check for the validity of the object before running the program like statically typed languages, domains would be able to find errors at compile time unlike the dynamically typed languages, which can both be a strength and weakness, as it will most likely be slower than simple type matching, and quick interpretive running is one of the strength of dynamically typed languages.  Unfortunately, because I did not find any way to simulate compile time type checking in Ruby, it is not a feature.
 
 ## Strengths
 
