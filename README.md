@@ -213,23 +213,23 @@ variable `x` with domain IntegerString can respond to both String and Integer's 
 There are various limits to the Ruby's implicit conversions that makes some of the implicit conversions impossible.  However, here are several ways this code achieve this functionality:
 
 * Ability to specify translation rules in the domain declaration:
-```
-domain :Integer do
-  rule(Integer)
-  rule(String) { |x| is_integer(x) }
+  ```
+  domain :Integer do
+    rule(Integer)
+    rule(String) { |x| is_integer(x) }
   
-  default(Integer)
+    default(Integer)
   
-  translate(String, :default) { |x| x.to_i }
-  translate(:default, String) { |x| x.to_s }
-end
-```
+    translate(String, :default) { |x| x.to_i }
+    translate(:default, String) { |x| x.to_s }
+  end
+  ```
 
   `translate` method takes domain A and domain B as argument and a block that successfully change the value from A -> B.  The argument also takes the symbol `:default` as an argument, which will be discussed later
 
   `default` method takes a domain as an argument, which creates a "default" value for the object.  This default value is used to find another path that was not directly specified.  For example, suppose that a domain has translation rules for `Integer -> String` and `String -> Float`, and you want to translate Integer -> Float.  Because there are no direct Integer -> Float translation rules, one can set String as default value, which would make the domain also try Integer -> String -> Float translation, which exists.
 
- Perhaps in the future, there can be an algorithm that can find a path without relying on a default value.
+  Perhaps in the future, there can be an algorithm that can find a path without relying on a default value.
 
 * Automatically creating implicit conversion methods such as `to_ary` and `to_int` whenever there are rules that translate objects to them.
 
