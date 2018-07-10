@@ -46,6 +46,7 @@ module DomainCreate
         else
             return cl
         end
+        
     end
 
     def create_initializer(a, domain)
