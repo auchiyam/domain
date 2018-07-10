@@ -37,6 +37,8 @@ def testing_stuff
     puts 100 + a
 end
 
+"test"
+
 testing_stuff
 
 
