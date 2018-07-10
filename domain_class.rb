@@ -102,6 +102,9 @@ module DomainClass
                 a = "str"       if out == String
                 
                 define_method "to_#{a}" do
+                    if @value.class == self.class
+                        return @value.value.send "to_#{a}"
+                    end
 
                     default = self.class.default
                     val = self.class.send :translate, @value.class, out, @value
@@ -117,7 +120,7 @@ module DomainClass
 
             define_method "to_#{out.name}" do
                 if @value.class == self.class
-                    return @value.value
+                    return @value.value.send "to_#{out.name}"
                 end
 
                 default = self.class.default
@@ -137,11 +140,7 @@ module DomainClass
         numeral_output = numerals & output
 
         define_method :coerce do |other|
-            # other is number that can be translated
-            if numeral_output.include?(other.class)
-                i = self.value(other.class)
-                return [other, i]
-            end
+            return [other, self.value(numeral_output[0])] if !numeral_output.empty?
 
             nil
         end
@@ -161,7 +160,7 @@ module DomainClass
         if eigen.compound_domain.value?(value)
             @value = value
         else
-            raise ValueOutOfBoundsError.new("<#{value}> does not satisfy the rule for <#{eigen}>")
+            raise Domain::ValueOutOfBoundsError.new("<#{value}> does not satisfy the rule for <#{eigen}>")
         end
     end
 
