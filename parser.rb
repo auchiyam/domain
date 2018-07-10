@@ -360,7 +360,6 @@ module DomainParser
     def parse_signature(cl, local, sig)
         tokens = parse_tokens sig
 
-        arg, ret = interpret_tokens cl, local, tokens
-        return arg, ret
+        return interpret_tokens cl, local, tokens
     end
 end

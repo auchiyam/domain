@@ -1,4 +1,7 @@
+require('./errors.rb')
+
 module DomainWrapper
+    include DomainErrors
     RandomSeed = Random.new(100)
 
     # Given a string denoting the "signature" of the method, aka the domain and codomain of the method in mathematical format,
@@ -55,10 +58,10 @@ module DomainWrapper
                     expected_length_kwarg = 0
 
                     # args is nil, so there should not be any parameters except for the blocks
-                    if args.length == 1 && args[0].nil? && param.reject{ |x| x[0] == :block }.length != 0
-                        raise SignatureViolationError.new "Wrong number of arguments: Expected 0 argument(s), found #{param.length}"
-                    # Then see if the variables are structured properly, such as making sure that star variable is a 3rd variable if the signature also have star variable for 3rd
+                    if args.length == 1 && args[0].nil? && param.reject{ |x| x[0] == :block }.length == 0
+                        next
                     else
+                        # Then see if the variables are structured properly, such as making sure that star variable is a 3rd variable if the signature also have star variable for 3rd
                         param_arg = param.reject { |x| x[0] != :req && x[0] != :opt && x[0] != :rest }
                         if param_arg.length != args.length
                             raise SignatureViolationError.new "Wrong number of total arguments: Expected #{args.length}, found #{param_arg.length}"
@@ -154,7 +157,7 @@ module DomainWrapper
                             end
 
                             all_rets = if r.is_a?(Enumerable) then r else [r] end
-                            ret_types = ret
+                            ret_types = if ret.is_a?(Enumerable) then ret else [ret] end
 
                             all_rets.zip(ret_types).each do |ret_type|
                                 ret, type = ret_type

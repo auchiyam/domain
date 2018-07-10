@@ -1,4 +1,7 @@
+require('./errors.rb')
+
 module DomainClass
+    include DomainErrors
     attr_accessor :rules
     attr_accessor :translators
     attr_accessor :compound_domain
@@ -46,7 +49,9 @@ module DomainClass
         valid = true # stores whether the value is valid for the domain or not
         checked = rules.empty? # to see whether that type is checked or not.  If it was not checked, it means that there were no rules that match the domain
 
+        # if the value is the domain itself, then automatically accept the domain's value
         if value.class == self
+            @value = value.value
             return true
         end
 
@@ -159,9 +164,13 @@ module DomainClass
     def value=(value)
         eigen = self.class
         if eigen.compound_domain.value?(value)
-            @value = value
+            if value.class == self.class
+                @value = value.value
+            else
+                @value = value
+            end
         else
-            raise Domain::ValueOutOfBoundsError.new("<#{value}> does not satisfy the rule for <#{eigen}>")
+            raise ValueOutOfBoundsError.new("<#{value}> does not satisfy the rule for <#{eigen}>")
         end
     end
 

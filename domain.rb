@@ -3,6 +3,7 @@ require('./parser.rb')
 require('./domain_class.rb')
 require('./monkey_patching.rb')
 require('./create_domain.rb')
+require('./errors.rb')
 
 module Domain
     extend self
@@ -11,13 +12,7 @@ module Domain
     include DomainParser
     include DomainCompoundDomain
     include DomainCreate
-    class Error < StandardError; end
-    class ValueOutOfBoundsError < Error; end
-    class InvalidRuleError < Error; end
-    class InvalidSignatureError < Error; end
-    class NoMethodAddedError < Error; end
-    class SignatureViolationError < Error; end
-    class NoTranslationError < Error; end
+    include DomainErrors
 
     # The entrance to most of the domain logic in the library
     def domain(*arg)

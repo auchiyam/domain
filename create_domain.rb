@@ -1,4 +1,7 @@
+require('./errors.rb')
+
 module DomainCreate
+    include DomainErrors
     extend self
     # Given a block of rules and optionally a compound rule, create_domain create an anonymous class
     # that is based on the template
@@ -92,7 +95,7 @@ module DomainCreate
                     # If the ID changed, then a new value was assigned to the variable.  Check for validity
                     if new_obj_id != obj_id
                         if !domain.value? value
-                            raise Domain::ValueOutOfBoundsError.new "from #{path_checked}:#{line_checked}: '#{value}' assigned to variable '#{sym}', which is out of bounds from '#{domain.name}'"
+                            raise ValueOutOfBoundsError.new "from #{path_checked}:#{line_checked}: '#{value}' assigned to variable '#{sym}', which is out of bounds from '#{domain.name}'"
                         end
 
                         val = domain.new
@@ -102,9 +105,10 @@ module DomainCreate
 
                         # update obj_id
                         obj_id = new_obj_id
-                        path_checked = x.path
-                        line_checked = x.lineno
                     end
+
+                    path_checked = x.path
+                    line_checked = x.lineno
                 else
                     next
                 end
