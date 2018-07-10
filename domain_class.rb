@@ -103,7 +103,7 @@ module DomainClass
                 
                 define_method "to_#{a}" do
                     if @value.class == self.class
-                        return @value.value.send "to_#{a}"
+                        return @value.send "to_#{a}"
                     end
 
                     default = self.class.default
@@ -120,7 +120,7 @@ module DomainClass
 
             define_method "to_#{out.name}" do
                 if @value.class == self.class
-                    return @value.value.send "to_#{out.name}"
+                    return @value.send "to_#{out.name}"
                 end
 
                 default = self.class.default
@@ -140,6 +140,7 @@ module DomainClass
         numeral_output = numerals & output
 
         define_method :coerce do |other|
+            
             return [other, self.value(numeral_output[0])] if !numeral_output.empty?
 
             nil
