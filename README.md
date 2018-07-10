@@ -115,7 +115,7 @@ String y
 x = 500         # no error
 x = "500"       # no error
 # x = "String"  # error
-# x = bar()     # error
+x = bar()     # no error
 
 # y = 500       # error
 y = "500"       # no error
@@ -125,23 +125,40 @@ foo(x)          # no error
 # foo(y)        # error
 ```
 
-x and y are declared to be part of domains `Integer` and `String` respectively, so any object that are part of the domain are accepted without any error.  Additionally, notice how the `x = bar()` and `foo(y)` cause an error.  This is because String is not a subset of Integer, so even if the actual value can be interpreted as an Integer, it is not accepted.
-
 #### Implementation
 
-This feature is implemented in this code as follows:
+This feature is implemented in this code with syntax as follows:
 
 ```
-x = Integer.new
+# ... Integer and String domain defined
 
-x.value = 50        # no error
-x.value = "50"      # no error
-x.value = "String"  # error
+domain 'Integer -> nil'
+def foo(Integer x)
+
+end
+
+domain 'nil -> String
+def bar()
+  "300"
+end
+
+Integer :x
+String :y
+
+x = 500         # no error
+x = "500"       # no error
+# x = "String"  # error
+x = bar()       # no error
+
+# y = 500       # error
+y = "500"       # no error
+y = bar()       # no error
+
+foo(x)          # no error
+foo(y)          # no error
 ```
 
-Unfortunately, no declaration of variables is possible in Ruby as the Binding class's `local_variable_set()` method does not allow creation of a new variable.  Additionally, because `x = <value>` would replace its domain, it is also not a very secure way to implement this code, as you can accidentally override the status of the domain for variable x easily.
-
-An alternative, slow method is to use a tracepoint that would slow the program down by up to three times.  It can, however, check the value upon every assignment.  Perhaps it can be implemented simply for illustration purpose.
+This repository is capable of simulating the 
 
 ### 4) Combination of Domains
 
