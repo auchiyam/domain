@@ -2,12 +2,15 @@ require('./wrapper.rb')
 require('./parser.rb')
 require('./domain_class.rb')
 require('./monkey_patching.rb')
+require('./create_domain.rb')
 
 module Domain
     extend self
+    include DomainCreate
     include DomainWrapper
     include DomainParser
     include DomainCompoundDomain
+    include DomainCreate
     class Error < StandardError; end
     class ValueOutOfBoundsError < Error; end
     class InvalidRuleError < Error; end
@@ -27,9 +30,13 @@ module Domain
             a = arg[0]
 
             if a.is_a? Symbol
-                create_domain(name: a) do
+                c = create_domain(name: a) do
                     yield
                 end
+
+                create_initializer a, c
+
+                c
             elsif a.is_a? String
                 wrap_method(a)
             else
@@ -37,54 +44,6 @@ module Domain
             end
         else
             raise ArgumentError.new "domain is not defined for #{arg.length} argument(s)"
-        end
-    end
-
-    # Given a block of rules and optionally a compound rule, create_domain create an anonymous class
-    # that is based on the template
-    def create_domain(compound: 0, name: "")
-        if !block_given? && compound == 0
-            raise ArgumentError.new "No block of rules were given.  There must be at least one rule for the domain"
-        end
-
-        # create a new class
-        cl = Class.new do
-            extend DomainClass   
-            include DomainClass
-        end
-
-        # prevents override of domain_created when nested.  Returns the @domain_created to the previous one after everything is done
-        prev = @domain_created
-
-        # set the domain that is currently being created
-        @domain_created = cl
-
-        # Initialization
-        # set the compound_domain to the specified one if it has any, else assign itself as compound domain
-        @domain_created.compound_domain = unless compound == 0 then compound else @domain_created end
-        @domain_created.rules = {}
-        @domain_created.translators = {}
-        @domain_created.default = nil
-
-        # Read blocks for the rules and other initialization
-        yield if block_given?
-
-        # since setup that takes place outside of this scope is done, revert it to the original
-        @domain_created = prev
-
-        # generate all the "to_<Domain>" methods based on the translators
-        cl.send :generate_translators
-
-        # If the name was provided, create the constant with that name
-        if not name.empty?
-            if self.inspect == 'main'
-                Object.const_set(name, cl)
-            else
-                self.const_set(name, cl)
-            end
-        # else, the domain should be anonymous
-        else
-            return cl
         end
     end
 
@@ -155,6 +114,8 @@ module Domain
         @domain_created.default = domain
     end
 
+    
+
     # private methods
     # ~~For domain
     private :create_domain
@@ -163,5 +124,4 @@ module Domain
     private :parse_signature, :parse_tokens, :interpret_tokens, :translate_to_domain
     # ~~For wrapper module
     private :wrap_method, :check_array, :check_keyword, :check_validity, :pad_with_optional, :is_optional?, :is_star?
-
 end

@@ -46,6 +46,10 @@ module DomainClass
         valid = true # stores whether the value is valid for the domain or not
         checked = rules.empty? # to see whether that type is checked or not.  If it was not checked, it means that there were no rules that match the domain
 
+        if value.class == self
+            return true
+        end
+
         # iterate through every rules in the domain
         rules.each do |type, rule_list|
 
@@ -98,6 +102,7 @@ module DomainClass
                 a = "str"       if out == String
                 
                 define_method "to_#{a}" do
+
                     default = self.class.default
                     val = self.class.send :translate, @value.class, out, @value
                     
@@ -111,6 +116,10 @@ module DomainClass
             end
 
             define_method "to_#{out.name}" do
+                if @value.class == self.class
+                    return @value.value
+                end
+
                 default = self.class.default
 
                 val = self.class.send :translate, @value.class, out, @value
@@ -143,6 +152,7 @@ module DomainClass
         if d_in == d_out
             return value
         end
+
         translators[[d_in, d_out]].call(value) if (!translators[[d_in, d_out]].nil? && !value.nil?)
     end
 
