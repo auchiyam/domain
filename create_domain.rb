@@ -46,7 +46,7 @@ module DomainCreate
         else
             return cl
         end
-        
+
     end
 
     def create_initializer(a, domain)
@@ -136,7 +136,6 @@ module DomainCreate
 
             bind_trace = TracePoint.trace(:line) do |x|
                 bind = x.binding
-
                 bind_trace.disable
             end
         end
