@@ -237,8 +237,8 @@ There are various limits to the Ruby's implicit conversions that makes some of t
   
     default(Integer)
   
-    translate(String, :default) { |x| x.to_i }
-    translate(:default, String) { |x| x.to_s }
+    translation(String, :default) { |x| x.to_i }
+    translation(:default, String) { |x| x.to_s }
   end
   ```
 
@@ -249,14 +249,57 @@ There are various limits to the Ruby's implicit conversions that makes some of t
   Perhaps in the future, there can be an algorithm that can find a path without relying on a default value.
 
 * Automatically creating implicit conversion methods such as `to_ary` and `to_int` whenever there are rules that translate objects to them.
+  ```
+  domain :Integer do
+    # ...
+    
+    translation(Integer, Array) { |x| x, x, x }
+  end
+  
+  Integer :a
+  
+  a = 50
+  
+  b,c,d = a     # to_ary is defined from the Array translation, so b = 50, c = 50, d = 50
+  ```
 
   The weakness to this approach is that not all classes has a method that are implicitly called, such as float.
 
 * Generating a coerce method whenever mathematical translations are needed, so it can be interpreted properly.
 
-  This allows variables to be interpreted properly in cases like `x + complex_class`
+  ```
+  domain :NewInteger do
+    # ...
+    
+    translation(String, Integer) { |x| Integer(x) }
+  end
+  
+  NewInteger :a
+  
+  a = "500"
+  
+  puts 500 + a          # 1000
+  ```
+
+  This allows variables to be interpreted properly in cases like `50 + complex_class`
 
 * Running method_missing so that if a method has been called for one of the output translation, the value is translated and then the method is called.
+
+  ```
+  domain :NewInteger do
+    # ...
+    
+    translation(String, Integer) { |x| Integer(x) }
+    translation(Integer, String) { |x| x.to_s }
+  end
+  
+  NewIteger :a
+  
+  a = -500
+  
+  puts a.abs      # 500
+  puts a.length   # 4
+  ```
 
   This allows the object to respond to any method that it can be converted to.
 
