@@ -115,7 +115,7 @@ String y
 x = 500         # no error
 x = "500"       # no error
 # x = "String"  # error
-x = bar()     # no error
+x = bar()       # no error
 
 # y = 500       # error
 y = "500"       # no error
@@ -157,8 +157,6 @@ y = bar()       # no error
 foo(x)          # no error
 foo(y)          # no error
 ```
-
-This repository is capable of simulating the 
 
 ### 4) Combination of Domains
 
