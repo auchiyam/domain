@@ -145,7 +145,6 @@ module DomainClass
         numeral_output = numerals & output
 
         define_method :coerce do |other|
-            
             return [other, self.value(numeral_output[0])] if !numeral_output.empty?
 
             nil
@@ -180,6 +179,45 @@ module DomainClass
         else
             @value
         end
+    end
+
+    def method_missing(name, *args, &blocks)
+        cl = self.class
+        output = [default] + (cl.translators.keys.map { |x| x[1] }) if !default.nil?
+        output = (cl.translators.keys.map { |x| x[1] }) if default.nil?
+
+        result = nil
+
+        binary_operations = %i[% & * ** + - / < << <= <=> == > >= >> ^]
+
+        output.each do |x|
+            # grab all methods it responds to
+            meth = x.methods
+
+            # If the output can respond to the value
+            if meth.include? name
+                if binary_operations.include? name
+                    value = self.value(x)                    
+                    begin
+                        result = instance_eval("#{value} #{name} #{args[0]}")
+                    rescue TypeError, ArgumentError
+                        next
+                    end
+                else
+                    value = self.value(x)
+                    begin
+                        result = value.call(name, *args) { blocks.call } if !blocks.nil?
+                        result = value.call(name, *args) if blocks.nil?
+                    rescue TypeError, ArgumentError
+                        next
+                    end
+                end
+            end
+        end
+
+        return result if !result.nil?
+
+        super
     end
 
     private :generate_translators, :check_rules, :translate
