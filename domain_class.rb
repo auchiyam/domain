@@ -6,6 +6,7 @@ module DomainClass
     attr_accessor :translators
     attr_accessor :compound_domain
     attr_accessor :default
+    attr_accessor :translation_map
 
     def print_rules
         puts "compound~~~~~~~~~~~~~~~~~"
@@ -111,13 +112,7 @@ module DomainClass
                         return @value.send "to_#{a}"
                     end
 
-                    default = self.class.default
                     val = self.class.send :translate, @value.class, out, @value
-                    
-                    if val.nil?
-                        mid = self.class.send :translate, @value.class, default, @value
-                        val = self.class.send :translate, default, out, mid
-                    end
 
                     val
                 end
@@ -128,14 +123,7 @@ module DomainClass
                     return @value.send "to_#{out.name}"
                 end
 
-                default = self.class.default
-
                 val = self.class.send :translate, @value.class, out, @value
-
-                if val.nil?
-                    mid = self.class.send :translate, @value.class, default, @value
-                    val = self.class.send :translate, default, out, mid
-                end
 
                 val
             end
@@ -157,7 +145,67 @@ module DomainClass
             return value
         end
 
-        translators[[d_in, d_out]].call(value) if (!translators[[d_in, d_out]].nil? && !value.nil?)
+        route = get_path(d_in, d_out)
+        route = fix_path(route)
+        val = value
+
+        route.each do |path|
+            val = translators[path].call(val) if (!translators[path].nil? && !val.nil?)
+        end
+
+        val
+    end
+
+    def get_path(src, dest)
+        checked = []
+        queue = [[src]]
+        found = false
+
+        while !queue.empty? && !found
+            head = queue[0][-1]
+            if head == dest
+                found = true
+            else
+                queue.shift
+            end
+
+            if !checked.include?(head) && !found
+                checked << head
+
+                # get all paths not checked
+                neighbors = @translation_map[head] - checked
+
+                if !neighbors.empty?
+                    path = [head]
+                    neighbors.each do |n|
+                        queue << path + [n]
+                    end
+                end
+            end
+        end
+
+        queue[0]
+    end
+
+    def fix_path(path)
+        prev = nil
+        curr = nil
+        fixed = []
+
+        path.each do |x|
+            if curr.nil?
+                curr = x
+            else
+                prev = curr
+                curr = x
+            end
+
+            if !prev.nil?
+                fixed << [prev, curr]
+            end
+        end
+
+        fixed
     end
 
     def value=(value)

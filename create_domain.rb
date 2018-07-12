@@ -28,12 +28,25 @@ module DomainCreate
         @domain_created.rules = {}
         @domain_created.translators = {}
         @domain_created.default = nil
+        @domain_created.translation_map = {}
 
         # Read blocks for the rules and other initialization
         yield if block_given?
+        
+        @domain_created.translators.each_key do |key|
+            d_in, d_out = key
+
+            if !@domain_created.translation_map.has_key? d_in
+                @domain_created.translation_map[d_in] = []
+            end
+
+            @domain_created.translation_map[d_in] << d_out
+        end
 
         # since setup that takes place outside of this scope is done, revert it to the original
         @domain_created = prev
+
+        
 
         # generate all the "to_<Domain>" methods based on the translators
         cl.send :generate_translators
