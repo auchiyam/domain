@@ -106,7 +106,7 @@ module DomainCreate
                     new_obj_id = value.object_id if bind.local_variable_defined?(sym)
 
                     # If the ID changed, then a new value was assigned to the variable.  Check for validity
-                    if new_obj_id != obj_id
+                    if new_obj_id != obj_id && line_checked != 0 && path_checked != 0
                         if !domain.value? value
                             raise ValueOutOfBoundsError.new "from #{path_checked}:#{line_checked}: '#{value}' assigned to variable '#{sym}', which is out of bounds from '#{domain.name}'"
                         end
@@ -115,10 +115,10 @@ module DomainCreate
                         val.value = value
 
                         bind.local_variable_set(sym, val)
-
-                        # update obj_id
-                        obj_id = new_obj_id
                     end
+
+                    # update obj_id
+                    obj_id = new_obj_id
 
                     path_checked = x.path
                     line_checked = x.lineno

@@ -8,198 +8,204 @@ module DomainWrapper
     # wrap_method wraps the method defined right after the <domain 'signature'> call and make all argument and return values conform to signature
     def wrap_method(signature)
         # Initialization
-        line = 0 # Number of lines the tracepoint parsed through
         local_binding = nil # the binding that points to the scope this domain class is called on
+        line = 0
 
-        trace = TracePoint.trace(:return) do |tp|
-            # Counts number of returns called.  1 = return wrap_method, 2 = return domain, 3 = return method_added
-            line += 1
+        return_trace = TracePoint.new(:return) do |tp|
+            # Disabling the tp as soon as possible to prevent any overhead just in case
+            tp.disable
 
-            # Ensure that the next line of code is method defining, else this domain call is in the wrong place
-            if line == 3
-                if tp.method_id == :method_added || tp.method_id == :singleton_method_added
-                    # Disabling the tp as soon as possible to prevent any overhead just in case
-                    tp.disable
+            # parse and interpret the signature given
+            args_kwargs, ret = parse_signature self.class, local_binding, signature
+            args, kwargs = args_kwargs
 
-                    # parse and interpret the signature given
-                    args_kwargs, ret = parse_signature self.class, local_binding, signature
-                    args, kwargs = args_kwargs
+            method_added_param = tp.self.method(tp.method_id)
 
-                    # initialize symbols for everything
-                    # ~~Get the method name we'll wrap
-                    method_name = tp.binding.local_variable_get :m
+            # initialize symbols for everything
+            # ~~Get the method name we'll wrap
+            method_name = tp.binding.local_variable_get method_added_param.parameters[0][1]
 
-                    # ~~intended to make accidental override of old method harder.  May cause a random error?
-                    random = RandomSeed.rand(100000000).to_s.rjust(12, '0')
+            # ~~intended to make accidental override of old method harder.  May cause a random error?
+            random = RandomSeed.rand(100000000).to_s.rjust(12, '0')
 
-                    # ~~the temp alias
-                    old_method_name = "old_#{method_name}_#{random}".intern
+            # ~~the temp alias
+            old_method_name = "old_#{method_name}_#{random}".intern
 
-                    # ~~Check for validity of the method by getting its arity and aligning it with the length of arguments in signature
-                    method = tp.self.instance_method(method_name) if tp.method_id == :method_added
-                    method = tp.self.method(method_name) if tp.method_id == :singleton_method_added
+            # ~~Check for validity of the method by getting its arity and aligning it with the length of arguments in signature
+            method = tp.self.instance_method(method_name) if tp.method_id == :method_added
+            method = tp.self.method(method_name) if tp.method_id == :singleton_method_added
 
-                    # ~~Check if the parameters should have star variable (*arg) or double star variable (**arg)
-                    has_star = false
-                    has_dstar = false
+            # ~~Check if the parameters should have star variable (*arg) or double star variable (**arg)
+            has_star = false
+            has_dstar = false
 
-                    args.each do |x|                        
-                        has_star = true if is_star?(x) && x.star == '*'
-                        has_dstar = true if is_star?(x) && x.star == '**'
+            args.each do |x|                        
+                has_star = true if is_star?(x) && x.star == '*'
+                has_dstar = true if is_star?(x) && x.star == '**'
+            end
+
+            has_dstar = !kwargs.empty? unless has_dstar
+
+            # Get all the parameters for the method
+            param = method.parameters
+            optional_arg = []
+            optional_kwarg = []
+            expected_length_arg = 0
+            expected_length_kwarg = 0
+
+            # args is nil, so there should not be any parameters except for the blocks
+            if args.length == 1 && args[0].nil? && param.reject{ |x| x[0] == :block }.length == 0
+                next
+            else
+                # Then see if the variables are structured properly, such as making sure that star variable is a 3rd variable if the signature also have star variable for 3rd
+                param_arg = param.reject { |x| x[0] != :req && x[0] != :opt && x[0] != :rest }
+                if param_arg.length != args.length
+                    raise SignatureViolationError.new "Wrong number of total arguments: Expected #{args.length}, found #{param_arg.length}"
+                end
+                # Iterate every rules
+                args.zip(param).each_with_index do |x, i|
+                    ar, par = x
+
+                    # Check if the parameter is what we expected
+                    case
+                    when ar.class == Class
+                        if par[0] != :req
+                            raise SignatureViolationError.new "Expected a required variable for #{par[1]}, found #{par[0]}"
+                        end
+                        expected_length_arg += 1
+                    when is_star?(ar)
+                        if par[0] != :rest
+                            raise SignatureViolationError.new "Expected a * variable for #{par[1]}, found #{par[0]}"
+                        end
+                    when is_optional?(ar)
+                        optional_arg << i
+                        if par[0] != :opt
+                            raise SignatureViolationError.new "Expected an optional variable for #{par[1]}, found #{par[0]}"
+                        end
+                        expected_length_arg += 1
                     end
+                end
 
-                    has_dstar = !kwargs.empty? unless has_dstar
+                # Do the same thing for the keyword section
+                key_matched =  []
 
-                    # Get all the parameters for the method
-                    param = method.parameters
-                    optional_arg = []
-                    optional_kwarg = []
-                    expected_length_arg = 0
-                    expected_length_kwarg = 0
+                param_kwarg = param.reject { |x| x[0] != :keyreq && x[0] != :key}
+                if param_kwarg.length != kwargs.length
+                    raise SignatureViolationError.new "Wrong number of keyword arguments: Expected #{kwargs.length}, found #{param_kwarg.length}"
+                end
+                
+                param.each do |par|
+                    if kwargs.has_key?(par[1])
+                        key_matched << par[1]
+                        if is_optional?(kwargs[par[1]])
+                            optional_kwarg << par[1]
+                        end
+                    end
+                end
 
-                    # args is nil, so there should not be any parameters except for the blocks
-                    if args.length == 1 && args[0].nil? && param.reject{ |x| x[0] == :block }.length == 0
-                        next
+                missing = kwargs.keys - key_matched
+                missing = [] if has_dstar
+
+                if !missing.empty?
+                    raise SignatureViolationError.new "The following keywords are not in the argument: #{missing}"
+                end
+            end
+
+            # determine whether to use define_method or define_singleton_method
+            use = if tp.method_id == :method_added then :define_method else :define_singleton_method end
+
+            tp_self = tp.self
+
+            # wrap the method
+            lamb = lambda do
+                tp_self.send use, method_name do | *arg1, **arg2, &block |
+                    old_arg1 = arg1
+                    old_arg2 = arg2
+
+                    all_args = [pad_with_optional(arg1, optional_arg, expected_length_arg), arg2]
+                    arg_types = args
+                    kwarg_types = kwargs
+
+                    if has_star
+                        check_array all_args[0], arg_types
                     else
-                        # Then see if the variables are structured properly, such as making sure that star variable is a 3rd variable if the signature also have star variable for 3rd
-                        param_arg = param.reject { |x| x[0] != :req && x[0] != :opt && x[0] != :rest }
-                        if param_arg.length != args.length
-                            raise SignatureViolationError.new "Wrong number of total arguments: Expected #{args.length}, found #{param_arg.length}"
-                        end
-                        # Iterate every rules
-                        args.zip(param).each_with_index do |x, i|
-                            ar, par = x
+                        (all_args[0].zip(arg_types)).each do |arg_type|
+                            arg, type = arg_type
 
-                            # Check if the parameter is what we expected
-                            case
-                            when ar.class == Class
-                                if par[0] != :req
-                                    raise SignatureViolationError.new "Expected a required variable for #{par[1]}, found #{par[0]}"
-                                end
-                                expected_length_arg += 1
-                            when is_star?(ar)
-                                if par[0] != :rest
-                                    raise SignatureViolationError.new "Expected a * variable for #{par[1]}, found #{par[0]}"
-                                end
-                            when is_optional?(ar)
-                                optional_arg << i
-                                if par[0] != :opt
-                                    raise SignatureViolationError.new "Expected an optional variable for #{par[1]}, found #{par[0]}"
-                                end
-                                expected_length_arg += 1
-                            end
+                            check_validity arg, type
                         end
+                    end
 
-                        # Do the same thing for the keyword section
-                        key_matched =  []
+                    check_keyword all_args[1], kwarg_types
 
-                        param_kwarg = param.reject { |x| x[0] != :keyreq && x[0] != :key}
-                        if param_kwarg.length != kwargs.length
-                            raise SignatureViolationError.new "Wrong number of keyword arguments: Expected #{kwargs.length}, found #{param_kwarg.length}"
-                        end
+                    if arg1.length == 0 && arg2.length == 0
+                        r = self.send(old_method_name) { block.call } if !block.nil?
+                        r = self.send(old_method_name) if block.nil?
+                    elsif arg2.length == 0
+                        r = self.send(old_method_name, *old_arg1) { block.call } if !block.nil?
+                        r = self.send(old_method_name, *old_arg1) if block.nil?
+                    elsif arg1.length == 0
+                        r = self.send(old_method_name, **old_arg2) { block.call } if !block.nil?
+                        r = self.send(old_method_name, **old_arg2) if block.nil?
+                    else
+                        r = self.send(old_method_name, *old_arg1, **old_arg2) { block.call } if !block.nil?
+                        r = self.send(old_method_name, *old_arg1, **old_arg2) if block.nil?
+                    end
+
+                    all_rets = if r.is_a?(Enumerable) then r else [r] end
+                    ret_types = if ret.is_a?(Enumerable) then ret else [ret] end
+
+                    all_rets.zip(ret_types).each do |ret_type|
+                        ret, type = ret_type
                         
-                        param.each do |par|
-                            if kwargs.has_key?(par[1])
-                                key_matched << par[1]
-                                if is_optional?(kwargs[par[1]])
-                                    optional_kwarg << par[1]
-                                end
-                            end
-                        end
-
-                        missing = kwargs.keys - key_matched
-                        missing = [] if has_dstar
-
-                        if !missing.empty?
-                            raise SignatureViolationError.new "The following keywords are not in the argument: #{missing}"
-                        end
+                        check_validity ret, type
                     end
 
-                    # determine whether to use define_method or define_singleton_method
-                    use = if tp.method_id == :method_added then :define_method else :define_singleton_method end
+                    all_rets
+                end
+            end
 
-                    tp_self = tp.self
-
-                    # wrap the method
-                    lamb = lambda do
-                        tp_self.send use, method_name do | *arg1, **arg2, &block |
-                            old_arg1 = arg1
-                            old_arg2 = arg2
-
-                            all_args = [pad_with_optional(arg1, optional_arg, expected_length_arg), arg2]
-                            arg_types = args
-                            kwarg_types = kwargs
-
-                            if has_star
-                                check_array all_args[0], arg_types
-                            else
-                                (all_args[0].zip(arg_types)).each do |arg_type|
-                                    arg, type = arg_type
-    
-                                    check_validity arg, type
-                                end
-                            end
-
-                            check_keyword all_args[1], kwarg_types
-
-                            if arg1.length == 0 && arg2.length == 0
-                                r = self.send(old_method_name) { block.call } if !block.nil?
-                                r = self.send(old_method_name) if block.nil?
-                            elsif arg2.length == 0
-                                r = self.send(old_method_name, *old_arg1) { block.call } if !block.nil?
-                                r = self.send(old_method_name, *old_arg1) if block.nil?
-                            elsif arg1.length == 0
-                                r = self.send(old_method_name, **old_arg2) { block.call } if !block.nil?
-                                r = self.send(old_method_name, **old_arg2) if block.nil?
-                            else
-                                r = self.send(old_method_name, *old_arg1, **old_arg2) { block.call } if !block.nil?
-                                r = self.send(old_method_name, *old_arg1, **old_arg2) if block.nil?
-                            end
-
-                            all_rets = if r.is_a?(Enumerable) then r else [r] end
-                            ret_types = if ret.is_a?(Enumerable) then ret else [ret] end
-
-                            all_rets.zip(ret_types).each do |ret_type|
-                                ret, type = ret_type
-                                
-                                check_validity ret, type
-                            end
-
-                            all_rets
-                        end
-                    end
-
-                    # quickly peek the next line and determine the public/private state of method
-                    trace = TracePoint.trace(:line) do |tp|
-                        tp.disable
-                        # create the newly defined method in the appropriate places
-                        if self.inspect == 'main'
-                            Object.class_eval do
-                                Object.alias_method(old_method_name, method_name)
-                                lamb.call
-                                private method_name, old_method_name
-                            end
-                        else
-                            self.class_eval do
-                                self.alias_method(old_method_name, method_name)
-                                private old_method_name
-                                pr = tp_self.private_methods(false).include?(method_name)
-                                lamb.call
-                                private method_name if pr
-                            end
-                        end
+            # quickly peek the next line and determine the public/private state of method
+            trace = TracePoint.trace(:line) do |tp|
+                tp.disable
+                # create the newly defined method in the appropriate places
+                if self.inspect == 'main'
+                    Object.class_eval do
+                        Object.alias_method(old_method_name, method_name)
+                        lamb.call
+                        private method_name, old_method_name
                     end
                 else
-                    tp.disable
-                    raise NoMethodAddedError.new "No new method has been defined for signature '#{signature}'"
-                end
+                    self.class_eval do
+                        self.alias_method(old_method_name, method_name)
+                        private old_method_name
+                        pr = tp_self.private_methods(false).include?(method_name)
+                        lamb.call
+                        private method_name if pr
+                    end
+                end            
             end
         end
 
+
+
         # Quickly grabs the binding of the scope this domain method is called on
-        trace = TracePoint.trace(:line) do |tp|
-            local_binding = tp.binding
-            tp.disable
+        line_trace = TracePoint.trace(:line) do |tp|
+            line += 1
+
+            if line == 1
+                local_binding = tp.binding
+            end
+
+            if line == 2
+
+                if tp.method_id != :method_added && tp.method_id !=:singleton_method_added
+                    raise NoMethodAddedError.new "No new method has been defined for signature '#{signature}'"
+                end
+
+                return_trace.enable
+                tp.disable
+            end
         end
     end
 
